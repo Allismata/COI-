@@ -10,7 +10,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;-webkit-font-smoothing:antialiased}
 #login{min-height:100vh;display:flex;align-items:center;justify-content:center}
-.lcard{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radlg);padding:2.5rem;width:100%;max-width:380px;box-shadow:0 4px 40px rgba(0,0,0,.06)}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radlg);overflow:visible}
 .lcard h1{font-family:'Instrument Serif',serif;font-size:30px;margin-bottom:4px}.lcard h1 em{font-style:italic;color:var(--accent)}
 .lsub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
 .lf label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
@@ -767,7 +767,8 @@ function openDetail(vname) {
     clist.innerHTML = contracts.map(function(c, i) {
       var isCurrent = i === 0;
       var openBtn   = c.pdf ? '<button class="btn" onclick="viewPDF(' + i + ')">Open PDF</button>' : '';
-var replaceBtn = '<button class="mitem" onclick="event.stopPropagation();closeMenus();doReplace()">Replace file</button>';      var deleteBtn  = '<button class="mitem red" onclick="event.stopPropagation();closeMenus();doDelete(' + i + ')">Move to trash</button>';
+var replaceBtn = '<button class="mitem" onclick="event.stopPropagation();closeMenus();doReplace()">Replace file</button>';      
+      var deleteBtn  = '<button class="mitem red" onclick="event.stopPropagation();closeMenus();doDelete(' + i + ')">Move to trash</button>';
       return '<div class="dcoirow">'
         + '<div style="display:flex;align-items:center;gap:14px;flex:1">'
         + '<div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:' + (isCurrent ? 'var(--alight)' : 'var(--bg2)') + '">'
