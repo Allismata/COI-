@@ -508,10 +508,20 @@ function processFile(file) {
         throw new Error(data.error.message || data.error);
       }
 
-      var txt = data.content
-        .filter(function(b) { return b.type === 'text'; })
-        .map(function(b) { return b.text; })
-        .join('');
+    var txt = '';
+
+if (data.content && Array.isArray(data.content)) {
+  txt = data.content
+    .filter(function(b) { return b.type === 'text'; })
+    .map(function(b) { return b.text; })
+    .join('');
+} else if (data.content) {
+  txt = data.content;
+} else if (data.text) {
+  txt = data.text;
+} else {
+  txt = JSON.stringify(data);
+}
 
       var parsed;
 
