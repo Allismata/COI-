@@ -586,19 +586,52 @@ function setPS(id, state) {
 }
 
 function showResult(d) {
+  d.checks = Array.isArray(d.checks) ? d.checks : [];
+
   var fails = d.checks.filter(function(c) { return !c.pass; });
+
   document.getElementById('resvendor').textContent = d.vendor_name || 'Unknown vendor';
-  var vtl = { contractor: 'General Contractor', vendor: 'Vendor / Supplier', service: 'Service Provider' }[d.vtype || vtype];
-  document.getElementById('resmeta').textContent = [vtl, d.expiration_date ? 'Expires ' + fd(d.expiration_date) : '', d.policy_number ? 'Policy ' + d.policy_number : ''].filter(Boolean).join(' · ');
+
+  var vtl = { 
+    contractor: 'General Contractor', 
+    vendor: 'Vendor / Supplier', 
+    service: 'Service Provider' 
+  }[d.vtype || vtype];
+
+  document.getElementById('resmeta').textContent = [
+    vtl,
+    d.expiration_date ? 'Expires ' + fd(d.expiration_date) : '',
+    d.policy_number ? 'Policy ' + d.policy_number : ''
+  ].filter(Boolean).join(' · ');
+
   var badge = document.getElementById('resbadge');
-  if (fails.length === 0) { badge.textContent = 'All checks passed'; badge.className = 'badge bpass'; }
-  else { badge.textContent = fails.length + ' issue' + (fails.length > 1 ? 's' : ''); badge.className = 'badge bfail'; }
-  document.getElementById('chklist').innerHTML = d.checks.map(function(c) {
-    return '<div class="chkrow"><span class="badge ' + (c.pass ? 'bpass' : 'bfail') + '">' + (c.pass ? 'Pass' : 'Fail') + '</span><span class="chkname">' + c.name + '</span><span style="color:var(--text3);font-size:11px">' + c.required + '</span><span class="' + (c.pass ? '' : 'chkfail') + '">' + c.found + '</span></div>';
-  }).join('');
-  document.getElementById('rescard').style.display    = 'block';
-  document.getElementById('emptycard').style.display  = 'none';
-  document.getElementById('remprompt').style.display  = 'block';
+
+  if (fails.length === 0) {
+    badge.textContent = d.checks.length ? 'All checks passed' : 'Review complete';
+    badge.className = 'badge bpass';
+  } else {
+    badge.textContent = fails.length + ' issue' + (fails.length > 1 ? 's' : '');
+    badge.className = 'badge bfail';
+  }
+
+  document.getElementById('chklist').innerHTML = d.checks.length
+    ? d.checks.map(function(c) {
+        return '<div class="chkrow"><span class="badge ' + (c.pass ? 'bpass' : 'bfail') + '">' + 
+          (c.pass ? 'Pass' : 'Fail') + 
+          '</span><span class="chkname">' + 
+          (c.name || 'Check') + 
+          '</span><span style="color:var(--text3);font-size:11px">' + 
+          (c.required || '') + 
+          '</span><span class="' + 
+          (c.pass ? '' : 'chkfail') + '">' + 
+          (c.found || '') + 
+          '</span></div>';
+      }).join('')
+    : '<div class="empty">AI reviewed the PDF, but did not return checklist details.</div>';
+
+  document.getElementById('rescard').style.display = 'block';
+  document.getElementById('emptycard').style.display = 'none';
+  document.getElementById('remprompt').style.display = 'block';
 }
 
 function noReminders() { document.getElementById('remprompt').style.display = 'none'; addLog('No reminders set — COI saved.', 'ok'); }
