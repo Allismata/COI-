@@ -464,52 +464,101 @@ function dzDrop(e)  { e.preventDefault(); dzLeave(); var f = e.dataTransfer.file
 function onFile(e)  { var f = e.target.files[0]; if (f) processFile(f); document.getElementById('file-in').value = ''; }
 
 function processFile(file) {
-  document.getElementById('dztitle').textContent   = file.name;
-  document.getElementById('rescard').style.display  = 'none';
+  document.getElementById('dztitle').textContent = file.name;
+  document.getElementById('rescard').style.display = 'none';
   document.getElementById('emptycard').style.display = 'none';
-  document.getElementById('alog').innerHTML           = '';
-  document.getElementById('schedbox').style.display   = 'none';
-  document.getElementById('remprompt').style.display  = 'none';
+  document.getElementById('alog').innerHTML = '';
+  document.getElementById('schedbox').style.display = 'none';
+  document.getElementById('remprompt').style.display = 'none';
+
   var prog = document.getElementById('prog');
   prog.style.display = 'flex';
   ['ps1','ps2','ps3','ps4'].forEach(function(id) { setPS(id, ''); });
 
   var reader = new FileReader();
+
   reader.onload = function(ev) {
     var b64 = ev.target.result.split(',')[1];
     curPDF = b64;
     setPS('ps1', 'active');
+
     wait(300).then(function() {
-      var reql = REQS[vtype].map(function(r) { return '- ' + r.n + ': ' + r.v; }).join('\n');
-      var vtl  = { contractor: 'General Contractor', vendor: 'Vendor / Supplier', service: 'Service Provider' }[vtype];
-      return fetch('https://api.anthropic.com/v1/messages', {
+      var vtl = { 
+        contractor: 'General Contractor', 
+        vendor: 'Vendor / Supplier', 
+        service: 'Service Provider' 
+      }[vtype];
+
+      return fetch('https://bytolknuymdauwkaswrk.supabase.co/functions/v1/smooth-worker', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1200,
-          messages: [{ role: 'user', content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
-            { type: 'text', text: 'Review this COI for a ' + vtl + '. Extract: vendor_name, vendor_email (or ""), expiration_date (YYYY-MM-DD), policy_number. Check each requirement:\n' + reql + '\nRespond ONLY with JSON, no markdown:\n{"vendor_name":"...","vendor_email":"...","expiration_date":"...","policy_number":"...","checks":[{"name":"...","required":"...","found":"...","pass":true}]}' }
-          ]}]
+          pdfBase64: b64,
+          vendorType: vtl
         })
       });
     }).then(function(res) {
-      setPS('ps1', 'done'); setPS('ps2', 'active');
+      setPS('ps1', 'done');
+      setPS('ps2', 'active');
       return res.json();
     }).then(function(data) {
-      var txt = data.content.filter(function(b) { return b.type === 'text'; }).map(function(b) { return b.text; }).join('');
+      if (data.error) {
+        throw new Error(data.error.message || data.error);
+      }
+
+      var txt = data.content
+        .filter(function(b) { return b.type === 'text'; })
+        .map(function(b) { return b.text; })
+        .join('');
+
       var parsed;
-      try { parsed = JSON.parse(txt.replace(/```json|```/g, '')); } catch(e) { throw new Error('Could not parse AI response'); }
-      setPS('ps2', 'done'); setPS('ps3', 'active');
-      return wait(400).then(function() { return parsed; });
+
+      try {
+        parsed = JSON.parse(txt.replace(/```json|```/g, ''));
+      } catch(e) {
+        throw new Error('Could not parse AI response');
+      }
+
+      setPS('ps2', 'done');
+      setPS('ps3', 'active');
+
+      return wait(400).then(function() { 
+        return parsed; 
+      });
     }).then(function(parsed) {
-      setPS('ps3', 'done'); setPS('ps4', 'done');
+      setPS('ps3', 'done');
+      setPS('ps4', 'done');
+
       rdata = Object.assign({}, parsed, { vtype: vtype });
-      if (parsed.vendor_email) document.getElementById('vemail').value = parsed.vendor_email;
-      var vtLabel = { contractor: 'General Contractors', vendor: 'Vendors', service: 'Service Providers' }[vtype] || 'Vendors';
-      var fname   = (parsed.vendor_name || 'Unknown') + '_COI_' + (parsed.expiration_date || 'unknown') + '.pdf';
-      addToStore(parsed.vendor_name || 'Unknown', vtLabel, parsed.expiration_date || '', parsed.policy_number || '', fname, me ? me.name : 'You', b64);
+
+      if (parsed.vendor_email) {
+        document.getElementById('vemail').value = parsed.vendor_email;
+      }
+
+      var vtLabel = { 
+        contractor: 'General Contractors', 
+        vendor: 'Vendors', 
+        service: 'Service Providers' 
+      }[vtype] || 'Vendors';
+
+      var fname = 
+        (parsed.vendor_name || 'Unknown') + 
+        '_COI_' + 
+        (parsed.expiration_date || 'unknown') + 
+        '.pdf';
+
+      addToStore(
+        parsed.vendor_name || 'Unknown',
+        vtLabel,
+        parsed.expiration_date || '',
+        parsed.policy_number || '',
+        fname,
+        me ? me.name : 'You',
+        b64
+      );
+
       addLog('Saved to vendor history: ' + (parsed.vendor_name || 'Unknown'), 'ok');
       showResult(parsed);
     }).catch(function(err) {
@@ -517,6 +566,7 @@ function processFile(file) {
       document.getElementById('dztitle').textContent = 'Error: ' + err.message;
     });
   };
+
   reader.readAsDataURL(file);
 }
 
