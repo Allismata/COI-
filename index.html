@@ -304,8 +304,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <!-- PDF MODAL -->
-<div class="pdfmodal" id="pdfmodal">
-  <div class="pdfinner">
+<div class="pdfmodal" id="pdfmodal" onclick="closePDF()">
+  <div class="pdfinner" onclick="event.stopPropagation()">
     <div class="pdfbar">
       <span style="font-size:13px;font-weight:500" id="pdftitle">—</span>
       <div style="display:flex;gap:8px;align-items:center">
@@ -767,8 +767,7 @@ function openDetail(vname) {
     clist.innerHTML = contracts.map(function(c, i) {
       var isCurrent = i === 0;
       var openBtn   = c.pdf ? '<button class="btn" onclick="viewPDF(' + i + ')">Open PDF</button>' : '';
-      var replaceBtn = isCurrent ? '<button class="mitem" onclick="event.stopPropagation();closeMenus();doReplace()">Replace file</button>' : '';
-      var deleteBtn  = '<button class="mitem red" onclick="event.stopPropagation();closeMenus();doDelete(' + i + ')">Move to trash</button>';
+var replaceBtn = '<button class="mitem" onclick="event.stopPropagation();closeMenus();doReplace()">Replace file</button>';      var deleteBtn  = '<button class="mitem red" onclick="event.stopPropagation();closeMenus();doDelete(' + i + ')">Move to trash</button>';
       return '<div class="dcoirow">'
         + '<div style="display:flex;align-items:center;gap:14px;flex:1">'
         + '<div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:' + (isCurrent ? 'var(--alight)' : 'var(--bg2)') + '">'
@@ -810,9 +809,9 @@ function doDelete(idx) {
   trash.unshift(item);
   vendor.contracts.splice(idx, 1);
   if (vendor.contracts.length === 0) delete docs[vendorName];
-  saveDocs(); saveTrash();
-  nav('vendors');
-  renderV();
+  saveDocs(); 
+saveTrash();
+openDetail(vendorName);
 }
 
 function doReplace() {
