@@ -29,11 +29,56 @@ const BASE_USERS=[{email:'allison@paradigm.xyz',name:'Allison',role:'Admin',offi
 const REQS={contractor:[{n:'General liability',v:'$2M per occurrence / $4M aggregate'},{n:'Workers compensation',v:'Statutory limits'},{n:'Commercial auto',v:'$1M combined single limit'},{n:'Umbrella / excess',v:'$5M minimum'},{n:'Certificate holder',v:'Paradigm listed as additional insured'},{n:'Policy not expired',v:'Active on upload date'}],vendor:[{n:'General liability',v:'$1M per occurrence / $2M aggregate'},{n:'Product liability',v:'$1M minimum'},{n:'Workers compensation',v:'Statutory if any employees'},{n:'Certificate holder',v:'Paradigm listed as additional insured'},{n:'Policy not expired',v:'Active on upload date'}],service:[{n:'General liability',v:'$1M per occurrence'},{n:'Professional / E&O',v:'$1M minimum'},{n:'Workers compensation',v:'Statutory if any employees'},{n:'Certificate holder',v:'Paradigm listed as additional insured'},{n:'Policy not expired',v:'Active on upload date'}]};
 const SAMPLE_BY_OFFICE={SF:[{name:'Pacific Builders Inc.',type:'General contractor',policy:'GL-203948',exp:'2026-05-02'},{name:'Acme Electrical Services',type:'General contractor',policy:'GL-119834',exp:'2026-05-15'},{name:'Bay Area Cleaning LLC',type:'Service provider',policy:'SP-338821',exp:'2026-04-10'},{name:'GreenScape Landscaping',type:'Vendor / supplier',policy:'VS-449012',exp:'2026-12-01'}],NY:[{name:'Empire State Electrical',type:'General contractor',policy:'NY-441902',exp:'2026-07-18'},{name:'Manhattan Cleaning Co.',type:'Service provider',policy:'NY-882100',exp:'2026-06-20'},{name:'Brooklyn Supply Co.',type:'Vendor / supplier',policy:'NY-771120',exp:'2026-10-04'},{name:'Midtown HVAC Group',type:'General contractor',policy:'NY-331908',exp:'2026-08-12'}],DC:[{name:'Capitol Facilities Group',type:'Service provider',policy:'DC-220391',exp:'2026-09-14'},{name:'DC Metro HVAC Solutions',type:'General contractor',policy:'DC-883420',exp:'2026-07-30'},{name:'Beltway Cleaning Svcs',type:'Service provider',policy:'DC-109244',exp:'2026-05-28'}]};
 function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k)||d)}catch(e){return JSON.parse(d)}}function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-function key(base){return base+'_'+officeView}function allUsers(){return BASE_USERS.concat(lsGet('coi_team','[]'))}
-var me=null, officeView='SF', docs={}, prev={}, trash=[], moved=[], vtype='contractor', rdata=null, curPDF=null, replacing=null, curV=null, activeTab='active';
+function key(base){return base+'_'+officeView}
+function removedUsers(){return lsGet('coi_removed_users','[]')}
+function allUsers(){
+  var removed = removedUsers();
+  return BASE_USERS.concat(lsGet('coi_team','[]')).filter(function(u){
+    return !removed.includes(u.email.toLowerCase());
+  });
+}
+  var me=null, officeView='SF', docs={}, prev={}, trash=[], moved=[], vtype='contractor', rdata=null, curPDF=null, replacing=null, curV=null, activeTab='active';
+  window.addEventListener('load', function() {
+  var savedEmail = sessionStorage.getItem('coi_current_user');
+  if (!savedEmail) return;
+
+  var u = allUsers().find(function(u) {
+    return u.email.toLowerCase() === savedEmail.toLowerCase();
+  });
+
+  if (!u) return;
+
+  me = u;
+  officeView = me.office;
+  loadOffice(officeView);
+
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('upill').textContent = u.name + ' · ' + u.role;
+  document.getElementById('opill').textContent = OFFICES[u.office].name;
+
+  nav('upload');
+  renderReqs('contractor');
+  renderTeam();
+  renderOfficeTabs();
+  calcStats();
+});
 function loadOffice(o){officeView=o;docs=lsGet('coi_docs_'+o,'{}');prev=lsGet('coi_prev_'+o,'{}');trash=lsGet('coi_trash_'+o,'[]');moved=lsGet('coi_moved_'+o,'[]')}
 function saveDocs(){lsSet('coi_docs_'+officeView,docs);calcStats();renderV()}function savePrev(){lsSet('coi_prev_'+officeView,prev)}function saveTrash(){lsSet('coi_trash_'+officeView,trash)}function saveMoved(){lsSet('coi_moved_'+officeView,moved)}
-function isOwnOffice(){return me&&officeView===me.office}function login(){var email=document.getElementById('lemail').value.trim().toLowerCase();var pass=document.getElementById('lpass').value;var u=allUsers().find(function(u){return u.email.toLowerCase()===email});if(!u||pass!==PASS){document.getElementById('lerr').style.display='block';return}me=u;officeView=me.office;loadOffice(officeView);document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex';document.getElementById('upill').textContent=u.name+' · '+u.role;document.getElementById('opill').textContent=OFFICES[u.office].name;nav('upload');renderReqs('contractor');renderTeam();renderOfficeTabs();calcStats()}function logout(){me=null;document.getElementById('login').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('lemail').value='';document.getElementById('lpass').value='';document.getElementById('lerr').style.display='none'}
+function isOwnOffice(){return me&&officeView===me.office}function login(){var email=document.getElementById('lemail').value.trim().toLowerCase();var pass=document.getElementById('lpass').value;var u=allUsers().find(function(u){return u.email.toLowerCase()===email});if(!u||pass!==PASS){document.getElementById('lerr').style.display='block';return}me = u; sessionStorage.setItem('coi_current_user', u.email);officeView=me.office;loadOffice(officeView);document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex';document.getElementById('upill').textContent=u.name+' · '+u.role;document.getElementById('opill').textContent=OFFICES[u.office].name;nav('upload');renderReqs('contractor');renderTeam();renderOfficeTabs();calcStats()}function logout(){
+
+  sessionStorage.removeItem('coi_current_user');
+
+  me = null;
+
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+
+  document.getElementById('lemail').value = '';
+  document.getElementById('lpass').value = '';
+
+  document.getElementById('lerr').style.display = 'none';
+}
 function nav(page){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on')});document.querySelectorAll('.nbtn').forEach(function(b){b.classList.remove('on')});document.getElementById('pg-'+page).classList.add('on');var nb=document.getElementById('nb-'+page);if(nb)nb.classList.add('on');if(page==='vendors'){renderOfficeTabs();renderVendorsView()}if(page==='team')renderTeam();calcStats()}function switchOffice(o){loadOffice(o);activeTab='active';switchTab('active');renderOfficeTabs();renderVendorsView();calcStats()}function renderOfficeTabs(){var el=document.getElementById('office-tabs');if(!el)return;el.innerHTML=Object.keys(OFFICES).map(function(k){var of=OFFICES[k];return '<button class="office-tab '+(officeView===k?'on':'')+'" onclick="switchOffice(\''+k+'\')"><span class="odot" style="background:'+of.color+'"></span>'+of.name+(me&&me.office===k?' <span class="youoffice">your office</span>':'')+'</button>'}).join('')}
 function renderVendorsView(){var own=isOwnOffice();document.getElementById('vendor-subtabs').classList.toggle('hide',!own);document.getElementById('viewonly-label').style.display=own?'none':'inline-block';var rb=document.getElementById('readonly-banner');rb.classList.toggle('on',!own);rb.textContent='You are viewing '+OFFICES[officeView].name+' — read only';if(!own){document.querySelectorAll('.vpanel').forEach(function(p){p.classList.remove('on')});document.getElementById('vp-active').classList.add('on')}renderV();if(own&&activeTab==='previous')renderPrev();if(own&&activeTab==='trash')renderTrash()}function switchTab(tab){activeTab=tab;['active','previous','trash'].forEach(function(t){document.getElementById('vt-'+t).classList.toggle('on',t===tab);document.getElementById('vp-'+t).classList.toggle('on',t===tab)});if(tab==='previous')renderPrev();if(tab==='trash')renderTrash()}
 function calcStats(){var all=allVendors();var total=all.length,soon=0,expired=0,ok=0;all.forEach(function(v){var d=daysLeft(v.exp);if(d<0)expired++;else if(d<=30)soon++;else ok++});document.getElementById('st-total').textContent=total;document.getElementById('st-soon').textContent=soon;document.getElementById('st-exp').textContent=expired;document.getElementById('st-ok').textContent=ok}
@@ -52,7 +97,33 @@ function renderTrash(){var el=document.getElementById('trashlist');if(!trash||tr
 function viewPDF(idx){if(!curV){alert('No vendor selected.');return}var stored=docs[curV];if(!stored||!stored.contracts[idx]||!stored.contracts[idx].pdf){alert('PDF not available — try re-uploading.');return}var c=stored.contracts[idx];document.getElementById('pdftitle').textContent=c.fileName;document.getElementById('pdfpages').textContent='Loading...';document.getElementById('pdfcanvas').innerHTML='';document.getElementById('pdfmodal').classList.add('open');var bytes=atob(c.pdf);var arr=new Uint8Array(bytes.length);for(var i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';pdfjsLib.getDocument({data:arr}).promise.then(function(pdf){document.getElementById('pdfpages').textContent=pdf.numPages+' page'+(pdf.numPages>1?'s':'');var cont=document.getElementById('pdfcanvas');var chain=Promise.resolve();for(var p=1;p<=pdf.numPages;p++){(function(pageNum){chain=chain.then(function(){return pdf.getPage(pageNum)}).then(function(page){var vp=page.getViewport({scale:1.6});var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;cv.style.cssText='width:100%;max-width:'+vp.width+'px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.15)';cont.appendChild(cv);return page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise})})(p)}return chain}).catch(function(e){document.getElementById('pdfcanvas').innerHTML='<div style="padding:2rem;color:var(--danger)">Could not render: '+e.message+'</div>'})}function closePDF(){document.getElementById('pdfmodal').classList.remove('open');document.getElementById('pdfcanvas').innerHTML=''}function toggleMenu(id,e){e.stopPropagation();var el=document.getElementById(id);if(!el)return;var wasOpen=el.classList.contains('open');closeMenus();if(!wasOpen)el.classList.add('open')}function closeMenus(){document.querySelectorAll('.mpop.open').forEach(function(m){m.classList.remove('open')})}document.addEventListener('click',closeMenus)
 function showReq(el,type){document.querySelectorAll('.rtab').forEach(function(b){b.classList.remove('on')});el.classList.add('on');renderReqs(type)}function renderReqs(type){document.getElementById('reqcontent').innerHTML=(REQS[type]||[]).map(function(r){return '<div class="reqrow"><span class="reqname">'+r.n+'</span><span class="reqval">'+r.v+'</span></div>'}).join('')}
 function initials(name){return (name||'??').split(' ').map(function(x){return x[0]}).join('').slice(0,2).toUpperCase()}function officeChip(o){var cls=o==='SF'?'sfchip':o==='NY'?'nychip':'dcchip';return '<span class="officebadge '+cls+'">'+OFFICES[o].name+'</span>'}function renderTeam(){var admin=me&&me.role==='Admin';var area=document.getElementById('team-admin-area');if(admin){area.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">Add new member</div><div class="teamform"><div><label>Full name</label><input id="new-name" placeholder="e.g. Sarah Kim"></div><div><label>Email</label><input id="new-email" placeholder="sarah@paradigm.xyz"></div><div><label>Office</label><select id="new-office"><option value="SF">San Francisco</option><option value="NY">New York</option><option value="DC">Washington DC</option></select></div><div><label>Role</label><select id="new-role"><option>Member</option><option>Admin</option></select></div><button class="btn btnp" onclick="addMember()">Add member →</button></div>'}else{area.innerHTML='<div class="teamnote">Only admins can make changes. You can view the team list below.</div>'}var rows=allUsers();document.getElementById('teamtable').innerHTML='<div class="trow head"><div>Member</div><div>Office</div><div>Role</div><div>Actions</div></div>'+rows.map(function(u){var self=me&&u.email===me.email;return '<div class="trow"><div class="membercell"><div class="avatar">'+initials(u.name)+'</div><div><div style="font-weight:500;font-size:14px">'+u.name+'</div><div class="memail">'+u.email+'</div></div></div><div>'+officeChip(u.office)+'</div><div><span class="rolechip">'+u.role+'</span></div><div>'+(self?'You':(admin?'<button class="btn btnd" onclick="removeMember(\''+u.email+'\')">Remove</button>':'—'))+'</div></div>'}).join('')}
-function addMember(){var name=document.getElementById('new-name').value.trim();var email=document.getElementById('new-email').value.trim().toLowerCase();var office=document.getElementById('new-office').value;var role=document.getElementById('new-role').value;if(!name||!email){alert('Add name and email.');return}var added=lsGet('coi_team','[]');if(allUsers().some(function(u){return u.email.toLowerCase()===email})){alert('That email already exists.');return}added.push({name:name,email:email,office:office,role:role});lsSet('coi_team',added);renderTeam()}function removeMember(email){if(!confirm('Remove this member?'))return;var added=lsGet('coi_team','[]').filter(function(u){return u.email!==email});lsSet('coi_team',added);renderTeam()}
+function addMember(){var name=document.getElementById('new-name').value.trim();var email=document.getElementById('new-email').value.trim().toLowerCase();var office=document.getElementById('new-office').value;var role=document.getElementById('new-role').value;if(!name||!email){alert('Add name and email.');return}var added=lsGet('coi_team','[]');if(allUsers().some(function(u){return u.email.toLowerCase()===email})){alert('That email already exists.');return}var removed = removedUsers().filter(function(e){ return e !== email; });
+lsSet('coi_removed_users', removed);
+
+added.push({name:name,email:email,office:office,role:role});
+lsSet('coi_team',added);
+renderTeam();}function removeMember(email){
+  email = email.toLowerCase();
+
+  if (me && email === me.email.toLowerCase()) {
+    alert('You cannot remove yourself.');
+    return;
+  }
+
+  if (!confirm('Remove this member?')) return;
+
+  var added = lsGet('coi_team','[]').filter(function(u){
+    return u.email.toLowerCase() !== email;
+  });
+
+  var removed = removedUsers();
+  if (!removed.includes(email)) removed.push(email);
+
+  lsSet('coi_team', added);
+  lsSet('coi_removed_users', removed);
+
+  renderTeam();
+}
 function daysLeft(exp){if(!exp)return 999;try{return Math.round((new Date(exp+'T12:00:00')-new Date())/86400000)}catch(e){return 999}}function fd(d){if(!d)return'—';try{var dt=typeof d==='string'?new Date(d.length<=10?d+'T12:00:00':d):d;return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch(e){return d}}function fs(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
 </script>
 </body>
