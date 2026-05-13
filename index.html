@@ -59,44 +59,146 @@ function processFile(file){
   reader.onload=function(ev){
     var b64=ev.target.result.split(',')[1];curPDF=b64;
     setPS('ps1','active');
-    wait(400).then(function(){
-      setPS('ps1','done');setPS('ps2','active');return wait(350);
-    }).then(function(){
-      setPS('ps2','done');setPS('ps3','active');return wait(350);
-    }).then(function(){
-      setPS('ps3','done');setPS('ps4','done');
-      var fn=document.getElementById('dztitle').textContent;
-      var vg=fn.replace(/_COI_.*/i,'').replace(/_/g,' ').replace(/\.pdf$/i,'').trim()||'Unknown Vendor';
-      var td=new Date();
-      var mainExp=new Date(td);mainExp.setFullYear(mainExp.getFullYear()+1);
-      var wcExp=new Date(mainExp);wcExp.setMonth(wcExp.getMonth()-1);
-      var fmt=function(d){return d.toISOString().split('T')[0]};
-      return {
-        vendor_name:vg,vendor_email:'',
-        expiration_date:fmt(mainExp),
-        policy_number:'GL-'+Math.random().toString(36).substr(2,6).toUpperCase(),
-        addl_insd:'Y',subr_wvd:'Y',
-        checks:[
-          {name:'General Liability',    found:'$1,000,000 / $2,000,000 aggregate',present:true, exp:fmt(mainExp)},
-          {name:'Auto Liability',       found:'$1,000,000 combined single limit', present:true, exp:fmt(mainExp)},
-          {name:'Umbrella Liability',   found:'$5,000,000 each occurrence',       present:true, exp:fmt(mainExp)},
-          {name:'Workers Compensation', found:'Statutory limits',                 present:true, exp:fmt(wcExp)},
-          {name:'Employers Liability',  found:'$1,000,000 each accident',         present:true, exp:fmt(wcExp)},
-          {name:'Professional Liability',found:'$5,000,000 per claim',            present:true, exp:fmt(mainExp)},
-          {name:'Pollution Liability',  found:'$5,000,000 per occurrence',        present:true, exp:fmt(mainExp)},
-          {name:'Cyber Liability',      found:'',                                 present:false,exp:null}
-        ]
-      };
-    }).then(function(parsed){
-      rdata=Object.assign({},parsed,{vtype:vtype});
-      if(parsed.vendor_email)document.getElementById('vemail').value=parsed.vendor_email;
-      var vtLabel={contractor:'General Contractors',vendor:'Vendors',service:'Service Providers'}[vtype]||'Vendors';
-      var fname=(parsed.vendor_name||'Unknown')+'_COI_'+(parsed.expiration_date||'unknown')+'.pdf';
-      showResult(parsed);
-      var replaced=addToStore(parsed.vendor_name||'Unknown',vtLabel,parsed.expiration_date||'',parsed.policy_number||'',fname,me?me.name:'You',b64,document.getElementById('chklist').innerHTML);
-      if(replaced){addLog('Previous COI archived - '+(parsed.vendor_name||'Unknown')+' updated','ok');addLog('Old reminders cancelled \u2014 set new ones below','ok')}
-      else{addLog('Saved to vendor history: '+(parsed.vendor_name||'Unknown'),'ok')}
-    }).catch(function(err){setPS('ps1','fail');document.getElementById('dztitle').textContent='Error: '+err.message});
+
+
+wait(300)
+.then(function () {
+
+  var vtl = {
+    contractor:'General Contractor',
+    vendor:'Vendor / Supplier',
+    service:'Service Provider'
+  }[vtype];
+
+  return fetch(
+    'https://bytolknuymdauwkaswrk.supabase.co/functions/v1/smooth-worker',
+    {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        pdfBase64:b64,
+        vendorType:vtl
+      })
+    }
+  );
+
+})
+.then(function(res){
+  setPS('ps1','done');
+  setPS('ps2','active');
+  return res.json();
+})
+.then(function(data){
+
+  if(data.error){
+    throw new Error(data.error.message || data.error);
+  }
+
+  var txt='';
+
+  if(data.content && Array.isArray(data.content)){
+    txt=data.content
+      .filter(function(b){ return b.type==='text'; })
+      .map(function(b){ return b.text; })
+      .join('');
+  }
+  else if(data.content){
+    txt=data.content;
+  }
+  else if(data.text){
+    txt=data.text;
+  }
+  else{
+    throw new Error(
+      'AI returned unexpected response'
+    );
+  }
+
+  var parsed;
+
+  try{
+    parsed = JSON.parse(
+      txt.replace(/```json|```/g,'')
+    );
+  }
+  catch(e){
+    throw new Error('Could not parse AI response');
+  }
+
+  setPS('ps2','done');
+  setPS('ps3','active');
+
+  return wait(400).then(function(){
+    return parsed;
+  });
+
+})
+.then(function(parsed){
+
+  setPS('ps3','done');
+  setPS('ps4','done');
+
+  rdata = Object.assign({}, parsed, {
+    vtype:vtype
+  });
+
+  if(parsed.vendor_email){
+    document.getElementById('vemail').value =
+      parsed.vendor_email;
+  }
+
+  var vtLabel = {
+    contractor:'General Contractors',
+    vendor:'Vendors',
+    service:'Service Providers'
+  }[vtype] || 'Vendors';
+
+  var fname =
+    (parsed.vendor_name || 'Unknown') +
+    '_COI_' +
+    (parsed.expiration_date || 'unknown') +
+    '.pdf';
+
+  showResult(parsed);
+
+  var replaced = addToStore(
+    parsed.vendor_name || 'Unknown',
+    vtLabel,
+    parsed.expiration_date || '',
+    parsed.policy_number || '',
+    fname,
+    me ? me.name : 'You',
+    b64,
+    document.getElementById('chklist').innerHTML
+  );
+
+  if(replaced){
+    addLog(
+      'Previous COI archived - ' +
+      (parsed.vendor_name || 'Unknown') +
+      ' updated',
+      'ok'
+    );
+  }
+  else{
+    addLog(
+      'Saved to vendor history: ' +
+      (parsed.vendor_name || 'Unknown'),
+      'ok'
+    );
+  }
+
+})
+.catch(function(err){
+
+  setPS('ps1','fail');
+
+  document.getElementById('dztitle').textContent =
+    'Error: ' + err.message;
+
+})
   };
   reader.readAsDataURL(file);
 }
