@@ -238,16 +238,31 @@ function showResult(d){
   document.getElementById('remprompt').style.display='block';
 }
 function toggleCheck(i){var detail=document.getElementById('chkdetail-'+i);var chev=document.getElementById('chev-'+i);if(!detail)return;var open=detail.style.display==='block';detail.style.display=open?'none':'block';if(chev)chev.textContent=open?'\u203a':'\u2304'}
-function noReminders(){document.getElementById('remprompt').style.display='none';addLog('No reminders set - COI saved.','ok')}
+function noReminders(){
+  var vEmail = document.getElementById('vemail').value.trim();
+  if (vEmail && rdata && rdata.vendor_name) {
+    if (!docs[rdata.vendor_name]) docs[rdata.vendor_name] = { type: 'Unknown', contracts: [] };
+    docs[rdata.vendor_name].contactEmail = vEmail;
+    saveDocs();
+  }
+
+  document.getElementById('remprompt').style.display='none';
+  addLog('No reminders set - COI saved.','ok');
+}
 function addLog(msg,type){var d=document.createElement('div');d.className='arow a'+type;d.textContent=msg;document.getElementById('alog').appendChild(d)}
 function cancelOldReminders(vendorName){addLog('Old reminders for '+vendorName+' cancelled.','ok')}
-function setReminders(){if(!rdata)return;document.getElementById('remprompt').style.display='none';var d=rdata;var vEmail=document.getElementById('vemail').value.trim();var exp=new Date((d.expiration_date||'2026-12-31')+'T12:00:00');var r30=new Date(exp);r30.setDate(r30.getDate()-30);var r15=new Date(exp);r15.setDate(r15.getDate()-15);addLog('New reminders set: '+fs(r30)+' (30-day) and '+fs(r15)+' (15-day)','ok');addLog('Renewal email auto-sends on '+fs(r30)+' via Apps Script.','ok');document.getElementById('schedrows').innerHTML='<div class="srow"><span class="sdate">'+fs(r30)+'</span><span class="sdesc">Renewal email reminder \u2192 '+(vEmail||'vendor')+'</span><span class="schip">Saved</span></div><div class="srow"><span class="sdate">'+fs(r15)+'</span><span class="sdesc">15-day follow-up reminder</span><span class="schip" style="background:#EBF0F8;color:#2A4A7A">Saved</span></div>';document.getElementById('schedbox').style.display='block'}
+function setReminders(){if(!rdata)return;var vEmail = document.getElementById('vemail').value.trim();
+if (vEmail && rdata && rdata.vendor_name) {
+  if (!docs[rdata.vendor_name]) docs[rdata.vendor_name] = { type: 'Unknown', contracts: [] };
+  docs[rdata.vendor_name].contactEmail = vEmail;
+  saveDocs();
+}document.getElementById('remprompt').style.display='none';var d=rdata;var exp=new Date((d.expiration_date||'2026-12-31')+'T12:00:00');var r30=new Date(exp);r30.setDate(r30.getDate()-30);var r15=new Date(exp);r15.setDate(r15.getDate()-15);addLog('New reminders set: '+fs(r30)+' (30-day) and '+fs(r15)+' (15-day)','ok');addLog('Renewal email auto-sends on '+fs(r30)+' via Apps Script.','ok');document.getElementById('schedrows').innerHTML='<div class="srow"><span class="sdate">'+fs(r30)+'</span><span class="sdesc">Renewal email reminder \u2192 '+(vEmail||'vendor')+'</span><span class="schip">Saved</span></div><div class="srow"><span class="sdate">'+fs(r15)+'</span><span class="sdesc">15-day follow-up reminder</span><span class="schip" style="background:#EBF0F8;color:#2A4A7A">Saved</span></div>';document.getElementById('schedbox').style.display='block'}
 function addToStore(vendorName,vendorType,expDate,policy,fileName,by,pdfB64,reviewSummary){
   if(!docs[vendorName])docs[vendorName]={type:vendorType,contracts:[]};
   var replaced=docs[vendorName].contracts&&docs[vendorName].contracts.length>0;
   if(replaced){docs[vendorName].contracts.forEach(function(c,i){if(i===0){c._archived=true;c._replaced=true}})}
   replacing=null;moved=moved.filter(function(n){return n!==vendorName});
-  docs[vendorName].contracts.unshift({fileName:fileName,expDate:expDate,policy:policy||'N/A',by:by||'You',at:new Date().toISOString(),pdf:pdfB64||null,reviewSummary:reviewSummary||''});
+  docs[vendorName].contracts.unshift({fileName:fileName,expDate:expDate,policy:policy||'N/A',by:by||'You',at:new Date().toISOString(),pdf:pdfB64||null,reviewSummary:reviewSummary||'', reviewData:rdata});
   saveDocs();saveMoved();if(replaced)cancelOldReminders(vendorName);return replaced;
 }
 function allVendors(){var list=[];(SAMPLE_BY_OFFICE[officeView]||[]).filter(function(v){return !moved.includes(v.name)}).forEach(function(v){var up=docs[v.name];if(up&&up.contracts.length>0){var c=up.contracts[0];list.push({name:v.name,type:v.type,policy:c.policy||v.policy,exp:c.expDate||v.exp})}else list.push({name:v.name,type:v.type,policy:v.policy,exp:v.exp})});Object.keys(docs).filter(function(n){return !moved.includes(n)&&!(SAMPLE_BY_OFFICE[officeView]||[]).find(function(s){return s.name===n})}).forEach(function(n){var s=docs[n];if(!s||!s.contracts.length)return;var c=s.contracts[0];list.push({name:n,type:s.type,policy:c.policy||'N/A',exp:c.expDate||''})});return list}
@@ -286,7 +301,28 @@ function renderTrash(){var el=document.getElementById('trashlist');if(!trash||tr
 function restoreTrash(idx){var item=trash[idx];if(!item)return;var vname=item._from;var c=JSON.parse(JSON.stringify(item));delete c._from;delete c._at;if(!docs[vname])docs[vname]={type:'Unknown',contracts:[]};docs[vname].contracts.push(c);docs[vname].contracts.sort(function(a,b){return new Date(b.at)-new Date(a.at)});trash.splice(idx,1);saveDocs();saveTrash();renderTrash()}
 function deleteTrash(idx){if(!confirm('Permanently delete this file?'))return;trash.splice(idx,1);saveTrash();renderTrash()}
 function viewPDF(idx){if(!curV){alert('No vendor selected.');return}var stored=docs[curV];if(!stored||!stored.contracts[idx]||!stored.contracts[idx].pdf){alert('PDF not available - try re-uploading.');return}var c=stored.contracts[idx];document.getElementById('pdftitle').textContent=c.fileName;document.getElementById('pdfpages').textContent='Loading...';document.getElementById('pdfcanvas').innerHTML='';document.getElementById('pdfmodal').classList.add('open');var bytes=atob(c.pdf);var arr=new Uint8Array(bytes.length);for(var i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';pdfjsLib.getDocument({data:arr}).promise.then(function(pdf){document.getElementById('pdfpages').textContent=pdf.numPages+' page'+(pdf.numPages>1?'s':'');var cont=document.getElementById('pdfcanvas');var chain=Promise.resolve();for(var p=1;p<=pdf.numPages;p++){(function(pageNum){chain=chain.then(function(){return pdf.getPage(pageNum)}).then(function(page){var vp=page.getViewport({scale:1.6});var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;cv.style.cssText='width:100%;max-width:'+vp.width+'px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.15)';cont.appendChild(cv);return page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise})})(p)}return chain}).catch(function(e){document.getElementById('pdfcanvas').innerHTML='<div style="padding:2rem;color:var(--danger)">Could not render: '+e.message+'</div>'})}
-function viewCoverageReview(idx){if(!curV)return;var stored=docs[curV];if(!stored||!stored.contracts[idx])return;var c=stored.contracts[idx];var summary=c.reviewSummary||'<div class="empty">No saved coverage review found for this COI.</div>';document.getElementById('pdftitle').textContent=c.fileName+' \u2014 Coverage review';document.getElementById('pdfpages').textContent='';document.getElementById('pdfcanvas').innerHTML='<div style="width:100%;max-width:760px;background:var(--surface);border-radius:16px;padding:24px;">'+summary+'</div>';document.getElementById('pdfmodal').classList.add('open')}
+function viewCoverageReview(idx){ if(!curV)return;
+  var stored=docs[curV];
+  if(!stored||!stored.contracts[idx])return;
+
+  var c=stored.contracts[idx];
+
+  if(c.reviewData){
+    showResult(c.reviewData);
+    var summary=document.getElementById('chklist').innerHTML;
+    document.getElementById('pdftitle').textContent=c.fileName+' — Coverage review';
+    document.getElementById('pdfpages').textContent='';
+    document.getElementById('pdfcanvas').innerHTML='<div style="width:100%;max-width:760px;background:var(--surface);border-radius:16px;padding:24px;">'+summary+'</div>';
+    document.getElementById('pdfmodal').classList.add('open');
+    return;
+  }
+
+  var summary=c.reviewSummary||'<div class="empty">No saved coverage review found for this COI.</div>';
+  document.getElementById('pdftitle').textContent=c.fileName+' — Coverage review';
+  document.getElementById('pdfpages').textContent='';
+  document.getElementById('pdfcanvas').innerHTML='<div style="width:100%;max-width:760px;background:var(--surface);border-radius:16px;padding:24px;">'+summary+'</div>';
+  document.getElementById('pdfmodal').classList.add('open');
+}
 function closePDF(){document.getElementById('pdfmodal').classList.remove('open');document.getElementById('pdfcanvas').innerHTML=''}
 function toggleMenu(id,e){e.stopPropagation();var el=document.getElementById(id);if(!el)return;var wasOpen=el.classList.contains('open');closeMenus();if(!wasOpen)el.classList.add('open')}
 function closeMenus(){document.querySelectorAll('.mpop.open').forEach(function(m){m.classList.remove('open')})}
