@@ -22,7 +22,51 @@
 <div id="app"><div class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z"/></svg></div><div class="brandname">Paradigm <em>COI</em></div></div><div class="nav"><button class="nbtn on" id="nb-upload" onclick="nav('upload')">Upload</button><button class="nbtn" id="nb-vendors" onclick="nav('vendors')">Vendors</button><button class="nbtn" id="nb-requirements" onclick="nav('requirements')">Requirements</button><button class="nbtn" id="nb-team" onclick="nav('team')">Team</button></div><div class="tright"><div class="upill" id="upill">-</div><div class="opill" id="opill">-</div><button class="signout" onclick="logout()">Sign out</button></div></div><div class="main">
 <div class="pg on" id="pg-upload"><div class="pgtitle">Upload <em>COI</em></div><div class="pgsub">Drop a vendor certificate for instant coverage review.</div><div class="sgrid"><div class="scard"><div class="snum" id="st-total">0</div><div class="slbl">Total vendors</div></div><div class="scard warn"><div class="snum" id="st-soon">0</div><div class="slbl">Expiring &lt;=30 days</div></div><div class="scard danger"><div class="snum" id="st-exp">0</div><div class="slbl">Expired</div></div><div class="scard ok"><div class="snum" id="st-ok">0</div><div class="slbl">Compliant</div></div></div><div class="ulayout"><div class="card"><div class="chead">Certificate of insurance</div><div class="cbody"><div class="dz" id="dz" onclick="document.getElementById('file-in').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"><input type="file" id="file-in" accept=".pdf" onchange="onFile(event)"><svg class="dzicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><div class="dztitle" id="dztitle">Drop PDF here or click to browse</div><div class="dzsub">COI PDF only - AI extracts all fields</div></div><div class="vtlabel">Vendor type</div><div class="vtgrid"><button class="vtbtn on" onclick="setVT(this,'contractor')">General contractor</button><button class="vtbtn" onclick="setVT(this,'vendor')">Vendor / supplier</button><button class="vtbtn" onclick="setVT(this,'service')">Service provider</button></div><div class="progwrap" id="prog"><div class="pstep" id="ps1"><div class="pdot"></div>Reading ACORD form...</div><div class="pstep" id="ps2"><div class="pdot"></div>Extracting coverage fields...</div><div class="pstep" id="ps3"><div class="pdot"></div>Building checklist...</div><div class="pstep" id="ps4"><div class="pdot"></div>Review complete</div></div></div></div><div><div class="card" id="rescard" style="display:none"><div class="chead"><span>Coverage review</span><span class="badge" id="resbadge">-</span></div><div class="cbody"><div class="resvendor" id="resvendor">-</div><div class="resmeta" id="resmeta">-</div><div id="chklist"></div><div class="divider"></div><label class="elabel">Vendor contact email</label><input type="email" class="einput" id="vemail" placeholder="vendor@company.com"><div class="timingnote">Renewal email sends automatically on the 30-day reminder date via Google Apps Script - not today.</div><div id="remprompt" style="display:none;margin-top:14px"><div style="font-size:13px;font-weight:500;margin-bottom:6px">Set renewal reminders?</div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">Creates 30-day and 15-day calendar events. Apps Script emails vendor on day 30.</div><div style="display:flex;gap:8px"><button class="btn btnp" onclick="setReminders()">Yes, set reminders</button><button class="btn" onclick="noReminders()">No, just save</button></div></div><div class="alog" id="alog"></div><div class="schedbox" id="schedbox"><div class="shead">Scheduled</div><div id="schedrows"></div></div></div></div><div class="card" id="emptycard"><div class="cbody"><div class="empty">Upload a PDF to see the AI review here.</div></div></div></div></div></div>
 <div class="pg" id="pg-vendors"><div class="pgtitle">Vendor <em>tracker</em></div><div class="pgsub">All vendors, expiration dates, and compliance status.</div><div class="office-tabs" id="office-tabs"></div><div class="readonly-banner" id="readonly-banner"></div><div class="vtabs" id="vendor-subtabs"><button class="vtab on" id="vt-active" onclick="switchTab('active')">Active vendors</button><button class="vtab" id="vt-previous" onclick="switchTab('previous')">Previous vendors</button><button class="vtab" id="vt-trash" onclick="switchTab('trash')">Trash</button></div><div class="vpanel on" id="vp-active"><div class="sbar"><div class="swrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="sinput" placeholder="Search vendors..." oninput="filterV(this.value)"></div><span class="viewonly" id="viewonly-label" style="display:none">view only</span></div><div class="vtable"><div class="vth"><div>Vendor</div><div>Type</div><div>Policy</div><div>Expires</div><div>Status</div></div><div id="vrows"></div></div></div><div class="vpanel" id="vp-previous"><div id="prevlist"><div class="empty">No previous vendors yet.</div></div></div><div class="vpanel" id="vp-trash"><div id="trashlist"><div class="empty">Trash is empty.</div></div></div></div>
-<div class="pg" id="pg-detail"><button class="backbtn" onclick="nav('vendors')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Back to vendors</button><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem"><div><div class="pgtitle" id="dname">-</div><div style="font-size:13px;color:var(--text2)" id="dtype">-</div></div><div style="display:flex;gap:8px;align-items:center"><span class="badge" id="dbadge">-</span><button class="btn" id="moveprev-btn" onclick="moveToPrev()">Move to previous</button></div></div><div class="dgrid"><div class="scard"><div class="snum" id="dexp" style="font-size:16px;font-family:'DM Sans',sans-serif;font-weight:500;letter-spacing:-.01em">-</div><div class="slbl">Expiration date</div></div><div class="scard"><div class="snum" id="dpol" style="font-size:14px;font-family:'DM Mono',monospace;font-weight:400">-</div><div class="slbl">Current policy</div></div><div class="scard"><div class="snum" id="dcnt">-</div><div class="slbl">COIs on file</div></div></div><div class="card"><div class="chead">COI history</div><div class="cbody" id="dcoilist"></div></div></div>
+<div class="pg" id="pg-detail"><button class="backbtn" onclick="nav('vendors')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Back to vendors</button><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem"><div><div class="pgtitle" id="dname">-</div><div style="font-size:13px;color:var(--text2)" id="dtype">-</div></div><div style="display:flex;gap:8px;align-items:center"><span class="badge" id="dbadge">-</span><button class="btn" id="moveprev-btn" onclick="moveToPrev()">Move to previous</button></div></div><div class="dgrid"><div class="scard"><div class="snum" id="dexp" style="font-size:16px;font-family:'DM Sans',sans-serif;font-weight:500;letter-spacing:-.01em">-</div><div class="slbl">Expiration date</div></div><div class="scard"><div class="snum" id="dpol" style="font-size:14px;font-family:'DM Mono',monospace;font-weight:400">-</div><div class="slbl">Current policy</div></div><div class="scard"><div class="snum" id="dcnt">-</div><div class="slbl">COIs on file</div></div></div><div class="card" style="margin-bottom:1rem">
+  <div class="chead">
+    <span>Vendor contact</span>
+    <button class="btn" onclick="toggleContactBox()">Edit</button>
+  </div>
+
+  <div class="cbody">
+    <div id="contact-current"
+      style="font-size:13px;color:var(--text2);margin-bottom:10px">
+      No contact saved
+    </div>
+
+    <div id="contact-box" style="display:none">
+      <input
+        class="einput"
+        id="contact-email-input"
+        placeholder="vendor@company.com"
+        style="margin-bottom:8px"
+      >
+
+      <button class="btn btnp" onclick="saveVendorContact()">
+        Save contact
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:1rem">
+  <div class="chead">
+    <span>Notes 📝</span>
+
+    <button class="btn" onclick="saveVendorNote()">
+      Save note
+    </button>
+  </div>
+
+  <div class="cbody">
+    <textarea
+      id="vendor-note"
+      class="einput"
+      style="min-height:80px;resize:vertical"
+      placeholder="Add notes about this vendor..."
+    ></textarea>
+  </div>
+</div> <div class="card"><div class="chead">COI history</div><div class="cbody" id="dcoilist"></div></div></div>
 <div class="pg" id="pg-requirements"><div class="pgtitle">COI <em>requirements</em></div><div class="pgsub">Coverage minimums checked on every uploaded certificate.</div><div class="rtabs"><button class="rtab on" onclick="showReq(this,'contractor')">General contractor</button><button class="rtab" onclick="showReq(this,'vendor')">Vendor / supplier</button><button class="rtab" onclick="showReq(this,'service')">Service provider</button></div><div class="card"><div class="cbody" id="reqcontent"></div></div></div>
 <div class="pg" id="pg-team"><div class="pgtitle">Team <em>access</em></div><div class="pgsub">Manage who can log in and which office they belong to.</div><div id="team-admin-area"></div><div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">Current members</div><div class="teamtable" id="teamtable"></div></div>
 </div></div>
@@ -279,8 +323,19 @@ function openDetail(vname){
   curV=vname;window._detailVendor=vname;
   var sample=(SAMPLE_BY_OFFICE[officeView]||[]).find(function(s){return s.name===vname});
   var stored=docs[vname];var contracts=stored?stored.contracts:[];var type=stored?stored.type:(sample?sample.type:'-');
-  document.getElementById('dname').textContent=vname;document.getElementById('dtype').textContent=type;document.getElementById('dcnt').textContent=contracts.length||(sample?'0 uploaded':0);
-  var badge=document.getElementById('dbadge');var expStr='-',polStr='-';
+  document.getElementById('dname').textContent=vname;
+document.getElementById('dtype').textContent=type;
+document.getElementById('dcnt').textContent=contracts.length||(sample?'0 uploaded':0);
+
+var contactEmail=(docs[vname]&&docs[vname].contactEmail)||'';
+document.getElementById('contact-current').textContent=contactEmail||'No contact saved';
+document.getElementById('contact-email-input').value=contactEmail;
+
+var note=(docs[vname]&&docs[vname].note)||'';
+document.getElementById('vendor-note').value=note;
+
+var badge=document.getElementById('dbadge');
+var expStr='-',polStr='-';
   var src=contracts.length>0?{exp:contracts[0].expDate,pol:contracts[0].policy}:(sample?{exp:sample.exp,pol:sample.policy}:null);
   if(src){expStr=fd(src.exp);polStr=src.pol||'N/A';var d=daysLeft(src.exp);if(d<0){badge.textContent='Expired';badge.className='badge bfail'}else if(d<=30){badge.textContent=d+'d left';badge.className='badge bwarn'}else{badge.textContent=d+'d left';badge.className='badge bpass'}}else{badge.textContent='-';badge.className='badge'}
   document.getElementById('dexp').textContent=expStr;document.getElementById('dpol').textContent=polStr;
@@ -296,6 +351,33 @@ function openDetail(vname){
     return '<div class="dcoirow"><div style="display:flex;align-items:center;gap:14px;flex:1"><div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+(isCurrent?'var(--alight)':'var(--bg2)')+'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(isCurrent?'var(--accent)':'var(--text3)')+'" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:13px;font-weight:500">'+c.fileName+'</span><span style="font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;background:'+(isCurrent?'var(--accent)':'var(--bg3)')+';color:'+(isCurrent?'#fff':'var(--text3)')+'">'+status+'</span></div><div style="font-size:11px;color:var(--text3)">Policy '+c.policy+' \u00b7 Expires '+fd(c.expDate)+' \u00b7 Uploaded '+fd(c.at)+' by '+c.by+'</div></div></div><div style="display:flex;gap:6px;margin-left:12px;flex-shrink:0;align-items:center">'+openBtn+reviewBtn+'<div class="mwrap"><button class="btn" onclick="event.stopPropagation();toggleMenu(\'coim'+i+'\',event)">\u00b7\u00b7\u00b7</button><div class="mpop" id="coim'+i+'">'+replaceBtn+deleteBtn+'</div></div></div></div>';
   }).join('')+'<div style="height:4px"></div>'}
   nav('detail');
+}
+function toggleContactBox(){
+  var box=document.getElementById('contact-box');
+  box.style.display=box.style.display==='none'?'block':'none';
+}
+
+function saveVendorContact(){
+  if(!curV)return;
+  var email=document.getElementById('contact-email-input').value.trim();
+  if(!docs[curV])docs[curV]={type:'Unknown',contracts:[]};
+  docs[curV].contactEmail=email;
+  docs[curV].contactUpdatedBy=me?me.name:'You';
+  docs[curV].contactUpdatedAt=new Date().toISOString();
+  saveDocs();
+  document.getElementById('contact-current').textContent=email||'No contact saved';
+  document.getElementById('contact-box').style.display='none';
+}
+
+function saveVendorNote(){
+  if(!curV)return;
+  var note=document.getElementById('vendor-note').value.trim();
+  if(!docs[curV])docs[curV]={type:'Unknown',contracts:[]};
+  docs[curV].note=note;
+  docs[curV].noteUpdatedBy=me?me.name:'You';
+  docs[curV].noteUpdatedAt=new Date().toISOString();
+  saveDocs();
+  alert('Note saved');
 }
 function doDelete(idx){var vendorName=window._detailVendor||curV;if(!vendorName){alert('Error: no vendor selected.');return}var vendor=docs[vendorName];if(!vendor||!vendor.contracts||!vendor.contracts[idx]){alert('Only uploaded COIs can be deleted.');return}if(!confirm('Move this COI to trash?'))return;var item=JSON.parse(JSON.stringify(vendor.contracts[idx]));item._from=vendorName;item._at=new Date().toISOString();trash.unshift(item);vendor.contracts.splice(idx,1);if(vendor.contracts.length===0)delete docs[vendorName];saveDocs();saveTrash();openDetail(vendorName)}
 function doReplace(){var vendorName=window._detailVendor||curV;if(!vendorName){alert('Error: no vendor selected.');return}replacing=vendorName;curV=vendorName;nav('upload');setTimeout(function(){document.getElementById('file-in').click()},200)}
