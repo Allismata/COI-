@@ -20,7 +20,66 @@
 <body>
 <div id="login"><div class="lcard"><h1>COI <em>Operations</em></h1><p class="lsub">Paradigm certificate of insurance management.</p><div class="lf"><label>Email</label><input type="email" id="lemail" placeholder="you@paradigm.xyz" onkeydown="if(event.key==='Enter')login()"><label>Password</label><input type="password" id="lpass" placeholder="password" onkeydown="if(event.key==='Enter')login()"><button class="lbtn" onclick="login()">Sign in</button></div><div id="lerr">Incorrect email or password.</div><div class="lhint">allison@paradigm.xyz (SF) &nbsp;&middot;&nbsp; curtis@paradigm.xyz (NY) &nbsp;&middot;&nbsp; dc@paradigm.xyz (DC) &nbsp;&middot;&nbsp; password: paradigm</div></div></div>
 <div id="app"><div class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z"/></svg></div><div class="brandname">Paradigm <em>COI</em></div></div><div class="nav"><button class="nbtn on" id="nb-upload" onclick="nav('upload')">Upload</button><button class="nbtn" id="nb-vendors" onclick="nav('vendors')">Vendors</button><button class="nbtn" id="nb-requirements" onclick="nav('requirements')">Requirements</button><button class="nbtn" id="nb-team" onclick="nav('team')">Team</button></div><div class="tright"><div class="upill" id="upill">-</div><div class="opill" id="opill">-</div><button class="signout" onclick="logout()">Sign out</button></div></div><div class="main">
-<div class="pg on" id="pg-upload"><div class="pgtitle">Upload <em>COI</em></div><div class="pgsub">Drop a vendor certificate for instant coverage review.</div><div class="sgrid"><div class="scard"><div class="snum" id="st-total">0</div><div class="slbl">Total vendors</div></div><div class="scard warn"><div class="snum" id="st-soon">0</div><div class="slbl">Expiring &lt;=30 days</div></div><div class="scard danger"><div class="snum" id="st-exp">0</div><div class="slbl">Expired</div></div><div class="scard ok"><div class="snum" id="st-ok">0</div><div class="slbl">Compliant</div></div></div><div class="ulayout"><div class="card"><div class="chead">Certificate of insurance</div><div class="cbody"><div class="dz" id="dz" onclick="document.getElementById('file-in').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"><input type="file" id="file-in" accept=".pdf" onchange="onFile(event)"><svg class="dzicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><div class="dztitle" id="dztitle">Drop PDF here or click to browse</div><div class="dzsub">COI PDF only - AI extracts all fields</div></div><div class="vtlabel">Vendor type</div><div class="vtgrid"><button class="vtbtn on" onclick="setVT(this,'contractor')">General contractor</button><button class="vtbtn" onclick="setVT(this,'vendor')">Vendor / supplier</button><button class="vtbtn" onclick="setVT(this,'service')">Service provider</button></div><div class="progwrap" id="prog"><div class="pstep" id="ps1"><div class="pdot"></div>Reading ACORD form...</div><div class="pstep" id="ps2"><div class="pdot"></div>Extracting coverage fields...</div><div class="pstep" id="ps3"><div class="pdot"></div>Building checklist...</div><div class="pstep" id="ps4"><div class="pdot"></div>Review complete</div></div></div></div><div><div class="card" id="rescard" style="display:none"><div class="chead"><span>Coverage review</span><span class="badge" id="resbadge">-</span></div><div class="cbody"><div class="resvendor" id="resvendor">-</div><div class="resmeta" id="resmeta">-</div><div id="chklist"></div><div class="divider"></div><label class="elabel">Vendor contact email</label><input type="email" class="einput" id="vemail" placeholder="vendor@company.com"><div class="timingnote">Renewal email sends automatically on the 30-day reminder date via Google Apps Script - not today.</div><div id="remprompt" style="display:none;margin-top:14px"><div style="font-size:13px;font-weight:500;margin-bottom:6px">Set renewal reminders?</div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">Creates 30-day and 15-day calendar events. Apps Script emails vendor on day 30.</div><div style="display:flex;gap:8px"><button class="btn btnp" onclick="setReminders()">Yes, set reminders</button><button class="btn" onclick="noReminders()">No, just save</button></div></div><div class="alog" id="alog"></div><div class="schedbox" id="schedbox"><div class="shead">Scheduled</div><div id="schedrows"></div></div></div></div><div class="card" id="emptycard"><div class="cbody"><div class="empty">Upload a PDF to see the AI review here.</div></div></div></div></div></div>
+<div class="pg on" id="pg-upload"><div class="pgtitle">Upload <em>COI</em></div><div class="pgsub">Drop a vendor certificate for instant coverage review.</div><div class="sgrid"><div class="scard"><div class="snum" id="st-total">0</div><div class="slbl">Total vendors</div></div><div class="scard warn"><div class="snum" id="st-soon">0</div><div class="slbl">Expiring &lt;=30 days</div></div><div class="scard danger"><div class="snum" id="st-exp">0</div><div class="slbl">Expired</div></div><div class="scard ok"><div class="snum" id="st-ok">0</div><div class="slbl">Compliant</div></div></div><div class="ulayout"><div class="card"><div class="chead">Certificate of insurance</div><div class="cbody"><div class="dz" id="dz" onclick="document.getElementById('file-in').click()" ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)"><input type="file" id="file-in" accept=".pdf" onchange="onFile(event)"><svg class="dzicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><div class="dztitle" id="dztitle">Drop PDF here or click to browse</div><div class="dzsub">COI PDF only - AI extracts all fields</div></div><div class="vtlabel">Vendor type</div><div class="vtgrid"><button class="vtbtn on" onclick="setVT(this,'contractor')">General contractor</button><button class="vtbtn" onclick="setVT(this,'vendor')">Vendor / supplier</button><button class="vtbtn" onclick="setVT(this,'service')">Service provider</button></div><div class="progwrap" id="prog"><div class="pstep" id="ps1"><div class="pdot"></div>Reading ACORD form...</div><div class="pstep" id="ps2"><div class="pdot"></div>Extracting coverage fields...</div><div class="pstep" id="ps3"><div class="pdot"></div>Building checklist...</div><div class="pstep" id="ps4"><div class="pdot"></div>Review complete</div></div></div></div><div><div class="card" id="rescard" style="display:none"><div class="chead"><span>Coverage review</span><span class="badge" id="resbadge">-</span></div><div class="cbody"><div class="resvendor" id="resvendor">Enter COI details</div>
+<div class="resmeta" id="resmeta">
+  Complete the fields below, then enter the vendor contact email.
+</div>
+
+<div style="display:grid;gap:10px;margin-bottom:14px">
+
+  <div>
+    <label class="elabel" for="manual-vendor-name">
+      Vendor name
+    </label>
+
+    <input
+      type="text"
+      class="einput"
+      id="manual-vendor-name"
+      placeholder="Vendor or insured name"
+    >
+  </div>
+
+  <div>
+    <label class="elabel" for="manual-policy-number">
+      Policy number
+    </label>
+
+    <input
+      type="text"
+      class="einput"
+      id="manual-policy-number"
+      placeholder="Policy number"
+    >
+  </div>
+
+  <div>
+    <label class="elabel" for="manual-effective-date">
+      Effective date
+    </label>
+
+    <input
+      type="date"
+      class="einput"
+      id="manual-effective-date"
+    >
+  </div>
+
+  <div>
+    <label class="elabel" for="manual-expiration-date">
+      Expiration date
+    </label>
+
+    <input
+      type="date"
+      class="einput"
+      id="manual-expiration-date"
+    >
+  </div>
+
+</div>
+
+<div id="chklist"></div><div class="divider"></div><label class="elabel">Vendor contact email</label><input type="email" class="einput" id="vemail" placeholder="vendor@company.com"><div class="timingnote">Renewal email sends automatically on the 30-day reminder date via Google Apps Script - not today.</div><div id="remprompt" style="display:none;margin-top:14px"><div style="font-size:13px;font-weight:500;margin-bottom:6px">Set renewal reminders?</div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">Creates 30-day and 15-day calendar events. Apps Script emails vendor on day 30.</div><div style="display:flex;gap:8px"><button class="btn btnp" onclick="setReminders()">Yes, set reminders</button><button class="btn" onclick="noReminders()">No, just save</button></div></div><div class="alog" id="alog"></div><div class="schedbox" id="schedbox"><div class="shead">Scheduled</div><div id="schedrows"></div></div></div></div><div class="card" id="emptycard"><div class="cbody"><div class="empty">Upload a PDF to see the AI review here.</div></div></div></div></div></div>
 <div class="pg" id="pg-vendors"><div class="pgtitle">Vendor <em>tracker</em></div><div class="pgsub">All vendors, expiration dates, and compliance status.</div><div class="office-tabs" id="office-tabs"></div><div class="readonly-banner" id="readonly-banner"></div><div class="vtabs" id="vendor-subtabs"><button class="vtab on" id="vt-active" onclick="switchTab('active')">Active vendors</button><button class="vtab" id="vt-previous" onclick="switchTab('previous')">Previous vendors</button><button class="vtab" id="vt-trash" onclick="switchTab('trash')">Trash</button></div><div class="vpanel on" id="vp-active"><div class="sbar"><div class="swrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="sinput" placeholder="Search vendors..." oninput="filterV(this.value)"></div><span class="viewonly" id="viewonly-label" style="display:none">view only</span></div><div class="vtable"><div class="vth"><div>Vendor</div><div>Type</div><div>Policy</div><div>Expires</div><div>Status</div></div><div id="vrows"></div></div></div><div class="vpanel" id="vp-previous"><div id="prevlist"><div class="empty">No previous vendors yet.</div></div></div><div class="vpanel" id="vp-trash"><div id="trashlist"><div class="empty">Trash is empty.</div></div></div></div>
 <div class="pg" id="pg-detail"><button class="backbtn" onclick="nav('vendors')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Back to vendors</button><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem"><div><div class="pgtitle" id="dname">-</div><div style="font-size:13px;color:var(--text2)" id="dtype">-</div></div><div style="display:flex;gap:8px;align-items:center"><span class="badge" id="dbadge">-</span><button class="btn" id="moveprev-btn" onclick="moveToPrev()">Move to previous</button></div></div><div class="dgrid"><div class="scard"><div class="snum" id="dexp" style="font-size:16px;font-family:'DM Sans',sans-serif;font-weight:500;letter-spacing:-.01em">-</div><div class="slbl">Expiration date</div></div><div class="scard"><div class="snum" id="dpol" style="font-size:14px;font-family:'DM Mono',monospace;font-weight:400">-</div><div class="slbl">Current policy</div></div><div class="scard"><div class="snum" id="dcnt">-</div><div class="slbl">COIs on file</div></div></div><div class="card" style="margin-bottom:1rem">
   <div class="chead">
@@ -112,144 +171,65 @@ function processFile(file){
     setPS('ps1','active');
 
 
-wait(300)
-.then(function () {
+wait(300).then(function () {
+  setPS('ps1', 'done');
+  setPS('ps2', 'done');
+  setPS('ps3', 'done');
+  setPS('ps4', 'done');
 
-  var vtl = {
-    contractor:'General Contractor',
-    vendor:'Vendor / Supplier',
-    service:'Service Provider'
-  }[vtype];
+  var fileName = file.name.replace(/\.pdf$/i, '');
 
-  return fetch(
-    'https://bytolknuymdauwkaswrk.supabase.co/functions/v1/smooth-worker',
-    {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        pdfBase64:b64,
-        vendorType:vtl
-      })
-    }
-  );
+  var suggestedVendorName = fileName
+    .replace(/_COI_.*/i, '')
+    .replace(/[-_]/g, ' ')
+    .trim();
 
-})
-.then(function(res){
-  setPS('ps1','done');
-  setPS('ps2','active');
-  return res.json();
-})
-.then(function(data){
+  rdata = {
+    vendor_name: suggestedVendorName || '',
+    vendor_email: '',
+    policy_number: '',
+    effective_date: '',
+    expiration_date: '',
+    addl_insd: '',
+    subr_wvd: '',
+    checks: [],
+    vtype: vtype
+  };
 
-  if(data.error){
-    throw new Error(data.error.message || data.error);
-  }
+  document.getElementById('manual-vendor-name').value =
+    rdata.vendor_name;
 
-  var txt='';
+  document.getElementById('manual-policy-number').value = '';
+  document.getElementById('manual-effective-date').value = '';
+  document.getElementById('manual-expiration-date').value = '';
+  document.getElementById('vemail').value = '';
 
-  if(data.content && Array.isArray(data.content)){
-    txt=data.content
-      .filter(function(b){ return b.type==='text'; })
-      .map(function(b){ return b.text; })
-      .join('');
-  }
-  else if(data.content){
-    txt=data.content;
-  }
-  else if(data.text){
-    txt=data.text;
-  }
-  else{
-    throw new Error(
-      'AI returned unexpected response'
-    );
-  }
+  document.getElementById('resvendor').textContent =
+    'Enter COI details';
 
-  var parsed;
+  document.getElementById('resmeta').textContent =
+    'Complete the fields below, then enter the vendor contact email.';
 
-  try{
-    parsed = JSON.parse(
-      txt.replace(/```json|```/g,'')
-    );
-  }
-  catch(e){
-    throw new Error('Could not parse AI response');
-  }
+  document.getElementById('chklist').innerHTML =
+    '<div class="timingnote">The PDF is ready. Enter the information shown on the certificate.</div>';
 
-  setPS('ps2','done');
-  setPS('ps3','active');
+  document.getElementById('resbadge').textContent =
+    'Manual entry';
 
-  return wait(400).then(function(){
-    return parsed;
-  });
+  document.getElementById('resbadge').className =
+    'badge bwarn';
 
-})
-.then(function(parsed){
+  document.getElementById('rescard').style.display =
+    'block';
 
-  setPS('ps3','done');
-  setPS('ps4','done');
+  document.getElementById('emptycard').style.display =
+    'none';
 
-  rdata = Object.assign({}, parsed, {
-    vtype:vtype
-  });
+  document.getElementById('remprompt').style.display =
+    'block';
 
-  if(parsed.vendor_email){
-    document.getElementById('vemail').value =
-      parsed.vendor_email;
-  }
-
-  var vtLabel = {
-    contractor:'General Contractors',
-    vendor:'Vendors',
-    service:'Service Providers'
-  }[vtype] || 'Vendors';
-
-  var fname =
-    (parsed.vendor_name || 'Unknown') +
-    '_COI_' +
-    (parsed.expiration_date || 'unknown') +
-    '.pdf';
-
-  showResult(parsed);
-
-  var replaced = addToStore(
-    parsed.vendor_name || 'Unknown',
-    vtLabel,
-    parsed.expiration_date || '',
-    parsed.policy_number || '',
-    fname,
-    me ? me.name : 'You',
-    b64,
-    document.getElementById('chklist').innerHTML
-  );
-
-  if(replaced){
-    addLog(
-      'Previous COI archived - ' +
-      (parsed.vendor_name || 'Unknown') +
-      ' updated',
-      'ok'
-    );
-  }
-  else{
-    addLog(
-      'Saved to vendor history: ' +
-      (parsed.vendor_name || 'Unknown'),
-      'ok'
-    );
-  }
-
-})
-.catch(function(err){
-
-  setPS('ps1','fail');
-
-  document.getElementById('dztitle').textContent =
-    'Error: ' + err.message;
-
-})
+  addLog('PDF loaded and ready for manual review.', 'ok');
+});
   };
   reader.readAsDataURL(file);
 }
@@ -304,6 +284,30 @@ function noReminders(){
   if (!rdata) {
     throw new Error('No COI information is available.');
   }
+      const manualVendorName =
+    document.getElementById('manual-vendor-name').value.trim();
+
+  const manualPolicyNumber =
+    document.getElementById('manual-policy-number').value.trim();
+
+  const manualEffectiveDate =
+    document.getElementById('manual-effective-date').value;
+
+  const manualExpirationDate =
+    document.getElementById('manual-expiration-date').value;
+
+  if (!manualVendorName) {
+    throw new Error('Enter the vendor name.');
+  }
+
+  if (!manualExpirationDate) {
+    throw new Error('Enter the expiration date.');
+  }
+
+  rdata.vendor_name = manualVendorName;
+  rdata.policy_number = manualPolicyNumber;
+  rdata.effective_date = manualEffectiveDate;
+  rdata.expiration_date = manualExpirationDate;
 
   const vendorEmail = document.getElementById('vemail').value.trim();
 
